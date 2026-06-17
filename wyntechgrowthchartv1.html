@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wynwood's Exponential Growth</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #FFFFFF;
+      color: #0F120E;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 44px 20px 20px;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #0F120E;
+    }
+
+    .tabs-wrapper {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 28px 20px 0;
+    }
+
+    .tab-btn {
+      padding: 10px 22px;
+      border: none;
+      border-radius: 999px;
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      color: #999;
+      border: 1.5px solid #ddd;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .tab-btn:hover { color: #0F120E; border-color: #aaa; }
+
+    .tab-btn.active {
+      color: #FFFFFF;
+      border-color: transparent;
+    }
+
+    .chart-section {
+      display: none;
+      max-width: 880px;
+      margin: 30px auto 0;
+      padding: 0 20px 60px;
+    }
+
+    .chart-section.active { display: block; }
+
+    .card {
+      background: #F9F4E1;
+      border-radius: 16px;
+      padding: 28px 28px 24px;
+      border: 1px solid #e8e3d0;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0F120E;
+      letter-spacing: -0.2px;
+    }
+
+    .card-sub {
+      color: #999;
+      font-size: 0.8rem;
+      margin-top: 5px;
+    }
+
+    .badge {
+      white-space: nowrap;
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .chart-wrap { position: relative; height: 380px; }
+
+    .stat-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat {
+      flex: 1;
+      background: #FFFFFF;
+      border-radius: 10px;
+      padding: 16px 18px;
+      border: 1px solid #e8e3d0;
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-top: 6px;
+    }
+
+    .stat-change {
+      font-size: 0.73rem;
+      color: #aaa;
+      margin-top: 3px;
+    }
+
+    .milestone-list {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .milestone {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.81rem;
+      color: #999;
+    }
+
+    .milestone-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .milestone strong { color: #0F120E; }
+    .policy-tag {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: #0F120E;
+      color: #F9F4E1;
+      letter-spacing: 0.3px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<div class="tabs-wrapper" id="tabs"></div>
+<div id="sections"></div>
+
+<script>
+Chart.register(window['chartjs-plugin-annotation']);
+
+const YEARS = [2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
+
+function expGrow(base, rate, len) {
+  return Array.from({ length: len }, (_, i) => Math.round(base * Math.pow(rate, i)));
+}
+
+// Palette
+const P = {
+  pink:    '#F8A79D',
+  poolBlue:'#7CCED0',
+  aqua:    '#1BB2B1',
+  green:   '#B5CFB2',
+  palm:    '#146D68',
+  offWhite:'#F9F4E1',
+};
+
+const metrics = [
+  {
+    id: "visitors",
+    label: "Visitors",
+    color: P.pink,
+    title: "Annual Visitors",
+    subtitle: "Foot traffic to the Wynwood Arts District",
+    yLabel: "Visitors per Year",
+    endYear: 2023,
+    data: [150000,210000,300000,500000,600000,900000,1400000,2000000,2800000,3100000,4500000,2200000,6000000,10000000,15000000],
+    format: v => v >= 1e6 ? (v/1e6).toFixed(1)+"M" : (v/1e3).toFixed(0)+"K",
+    badge: "15M visitors in 2023",
+    milestones: [
+      { year: 2009, text: "Wynwood Walls opens — Art Basel crowds arrive", sourced: true },
+      { year: 2013, text: "600,000 annual visitors", sourced: true },
+      { year: 2016, text: "Weekend foot traffic surpasses South Beach" },
+      { year: 2021, text: "6M+ annual visitors", sourced: true },
+      { year: 2023, text: "15M annual visitors", sourced: true },
+    ],
+    stats: [
+      { label: "2009 Visitors", value: "~150K", change: "est. at Walls opening" },
+      { label: "2023 Visitors", value: "15M", change: "+2,400%" },
+    ]
+  },
+  {
+    id: "businesses",
+    label: "Businesses",
+    color: P.poolBlue,
+    title: "Active Businesses",
+    subtitle: "Registered businesses operating in Wynwood BID",
+    yLabel: "Number of Businesses",
+    endYear: 2023,
+    data: expGrow(80, 1.122, 15),
+    format: v => v.toLocaleString(),
+    badge: "400+ businesses in 2023",
+    milestones: [
+      { year: 2009, text: "Mostly warehouses; handful of galleries", sourced: true },
+      { year: 2012, text: "BID established, formal business tracking begins" },
+      { year: 2015, text: "Restaurant & bar boom accelerates density" },
+      { year: 2019, text: "Tech startups & co-working spaces move in" },
+      { year: 2023, text: "400+ businesses across 50 blocks", sourced: true },
+    ],
+    stats: [
+      { label: "2009 Businesses", value: "~80", change: "estimated" },
+      { label: "2023 Businesses", value: "400+", change: "+1,718%" },
+    ]
+  },
+  {
+    id: "funding",
+    label: "Gov Funding",
+    color: P.green,
+    title: "BID Annual Operating Budget",
+    subtitle: "City of Miami annual allocation to the Wynwood BID",
+    yLabel: "Annual Budget (USD)",
+    endYear: 2024,
+    data: expGrow(100, 1.208, 16),
+    format: v => v >= 1000 ? "$"+(v/1000).toFixed(1)+"M" : "$"+v+"K",
+    badge: "$1.7M annual budget (2023–24)",
+    milestones: [
+      { year: 2009, text: "Initial streetscape & lighting grants", sourced: true },
+      { year: 2013, text: "Miami 21 zoning code unlocks CRA redevelopment funds" },
+      { year: 2017, text: "Federal Opportunity Zone designation draws capital" },
+      { year: 2020, text: "Miami-Dade GO Bond funds transit, parks & streetscape" },
+      { year: 2024, text: "$1.7M annual budget approved by City Commission", sourced: true },
+    ],
+    stats: [
+      { label: "2009 Budget", value: "~$100K", change: "pre-BID est." },
+      { label: "2024 Budget", value: "$1.7M", change: "+1,605%" },
+    ]
+  },
+  {
+    id: "housing",
+    label: "Housing",
+    color: P.aqua,
+    title: "Housing Units Available",
+    subtitle: "Total residential units available in the Wynwood area",
+    yLabel: "Housing Units",
+    endYear: 2026,
+    data: (() => { const d = expGrow(200, 1.164, 18); d[17] = 2645; return d; })(),
+    format: v => v.toLocaleString(),
+    badge: "2,645 units in 2026",
+    milestones: [
+      { year: 2009, text: "Sparse residential stock; mostly industrial warehouses", sourced: true },
+      { year: 2013, text: "First mixed-use residential towers approved" },
+      { year: 2016, text: "Wynwood NRD-1 Overlay enables higher-density residential builds" },
+      { year: 2020, text: "Remote migration surge drives developer pipeline" },
+      { year: 2026, text: "2,645 units existing", sourced: true },
+    ],
+    stats: [
+      { label: "2009 Units", value: "~200", change: "estimated" },
+      { label: "2026 Units", value: "2,645", change: "+1,223%" },
+    ]
+  },
+  {
+    id: "office",
+    label: "Office Supply",
+    color: P.palm,
+    title: "Office Space Supply",
+    subtitle: "Total leasable office & creative workspace (sq ft)",
+    yLabel: "Sq Ft (Thousands)",
+    endYear: 2025,
+    data: expGrow(5, 1.401, 17).map(v => Math.round(v)),
+    format: v => v >= 1000 ? (v/1000).toFixed(1)+"M" : v+"K",
+    badge: "~1.1M sq ft in 2025",
+    milestones: [
+      { year: 2009, text: "Mostly vacant warehouses; minimal office use" },
+      { year: 2012, text: "Miami 21 adaptive reuse allows warehouse-to-studio conversions" },
+      { year: 2016, text: "Co-working boom: WeWork, Pipeline & others enter" },
+      { year: 2021, text: "545wyn opens — largest office building in Wynwood", sourced: true },
+      { year: 2025, text: "~1.1M sq ft total (545wyn + Gateway + Wynwood Plaza)", sourced: true },
+    ],
+    stats: [
+      { label: "2009 Supply", value: "effectively 0", change: "estimated" },
+      { label: "2025 Supply", value: "~1.1M sqft", change: "+21,900%" },
+    ]
+  },
+];
+
+const tabsEl = document.getElementById('tabs');
+const sectionsEl = document.getElementById('sections');
+
+metrics.forEach((m, idx) => {
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn' + (idx === 0 ? ' active' : '');
+  if (idx === 0) { btn.style.background = m.color; btn.style.color = '#FFFFFF'; }
+  btn.textContent = m.label;
+  btn.dataset.idx = idx;
+  btn.addEventListener('click', () => switchTab(idx));
+  tabsEl.appendChild(btn);
+
+  const section = document.createElement('div');
+  section.className = 'chart-section' + (idx === 0 ? ' active' : '');
+  section.id = 'section-' + idx;
+
+  const milestoneHTML = m.milestones.map(ms => `
+    <div class="milestone">
+      <div class="milestone-dot" style="background:${m.color}"></div>
+      <span><strong>${ms.year}</strong> — ${ms.text}</span>
+    </div>
+  `).join('');
+
+  const statsHTML = m.stats.map(s => `
+    <div class="stat">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value" style="color:${m.color}">${s.value}</div>
+      <div class="stat-change">${s.change}</div>
+    </div>
+  `).join('');
+
+  section.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${m.title}</div>
+          <div class="card-sub">${m.subtitle}</div>
+        </div>
+        <div class="badge" style="background:${m.color}18; color:${m.color}; border:1px solid ${m.color}35">${m.badge}</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-${idx}"></canvas>
+      </div>
+      <div class="stat-row">${statsHTML}</div>
+      <div class="milestone-list">${milestoneHTML}</div>
+    </div>
+  `;
+
+  sectionsEl.appendChild(section);
+});
+
+function buildChart(idx) {
+  const m = metrics[idx];
+  const years = m.endYear ? YEARS.slice(0, YEARS.indexOf(m.endYear) + 1) : YEARS;
+  const ctx = document.getElementById('chart-' + idx).getContext('2d');
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 380);
+  grad.addColorStop(0, m.color + '40');
+  grad.addColorStop(1, m.color + '00');
+
+  // Sourced years and their y-values
+  const sourcedYears = m.milestones.filter(ms => ms.sourced).map(ms => ms.year);
+  const sourcedValues = sourcedYears.map(y => {
+    const i = years.indexOf(y);
+    return i >= 0 ? m.data[i] : null;
+  }).filter(v => v !== null);
+
+  // Sparse dataset: only sourced data points, null everywhere else
+  const sparseData = years.map((y, i) => sourcedYears.includes(y) ? m.data[i] : null);
+
+  // Permanent labels above each sourced dot
+  const annotations = {};
+  sourcedYears.forEach((yr, i) => {
+    const xIdx = years.indexOf(yr);
+    if (xIdx < 0) return;
+    const yVal = m.data[xIdx];
+    annotations['lbl' + i] = {
+      type: 'label',
+      xValue: yr,
+      yValue: yVal,
+      yAdjust: -18,
+      content: m.format(yVal),
+      color: m.color,
+      font: { size: 10, weight: '700' },
+      backgroundColor: 'transparent',
+      borderWidth: 0,
+    };
+  });
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: years,
+      datasets: [
+        {
+          // Full curve — line + fill only, no interaction
+          label: '_curve',
+          data: m.data,
+          borderColor: m.color,
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: true,
+          backgroundColor: grad,
+          tension: 0.4,
+          tooltip: { enabled: false },
+        },
+        {
+          // Sourced points only — dots + tooltip, no line
+          label: m.title,
+          data: sparseData,
+          borderColor: 'transparent',
+          borderWidth: 0,
+          pointRadius: 7,
+          pointHoverRadius: 9,
+          pointBackgroundColor: m.color,
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 2,
+          fill: false,
+          spanGaps: false,
+          showLine: false,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'nearest', intersect: true },
+      scales: {
+        x: {
+          grid: { color: '#e8e3d0' },
+          ticks: {
+            color: '#aaa',
+            font: { size: 10 },
+            maxRotation: 45,
+          },
+          border: { color: '#e8e3d0' },
+        },
+        y: {
+          grid: { color: '#e8e3d0' },
+          ticks: {
+            color: '#aaa',
+            font: { size: 11 },
+            callback: v => sourcedValues.includes(v) ? m.format(v) : '',
+          },
+          afterBuildTicks: axis => {
+            axis.ticks = sourcedValues.map(v => ({ value: v }));
+          },
+          border: { color: '#e8e3d0' },
+          title: {
+            display: true,
+            text: m.yLabel,
+            color: '#bbb',
+            font: { size: 11 },
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          filter: item => item.dataset.label !== '_curve',
+          backgroundColor: '#0F120E',
+          borderColor: m.color + '55',
+          borderWidth: 1,
+          titleColor: '#aaa',
+          bodyColor: '#F9F4E1',
+          padding: 12,
+          callbacks: {
+            title: items => items[0]?.label ?? '',
+            label: item => ' ' + m.format(item.raw),
+          }
+        },
+        annotation: { annotations },
+      }
+    }
+  });
+}
+
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+    b.style.background = i === idx ? metrics[i].color : 'transparent';
+    b.style.color = i === idx ? '#FFFFFF' : '#999';
+    b.style.borderColor = i === idx ? 'transparent' : '#2a2d28';
+  });
+  document.querySelectorAll('.chart-section').forEach((s, i) => {
+    s.classList.toggle('active', i === idx);
+  });
+  if (!document.getElementById('chart-' + idx).dataset.built) {
+    buildChart(idx);
+    document.getElementById('chart-' + idx).dataset.built = '1';
+  }
+}
+
+buildChart(0);
+document.getElementById('chart-0').dataset.built = '1';
+</script>
+</body>
+</html>
