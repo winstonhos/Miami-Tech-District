@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Wynwood Tech Map</title>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet"/>
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:#f5f5f0;color:#1a1a1a;font-family:'DM Sans',system-ui,sans-serif;display:flex;flex-direction:column}
+#topbar{height:52px;background:#fff;border-bottom:1px solid #e0ddd6;display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0;gap:10px;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+
+/* LAB ECOSYSTEM BAR */
+#lab-bar{height:38px;background:#f0fdf8;border-bottom:1px solid #b2eadc;display:flex;align-items:center;padding:0 18px;flex-shrink:0;gap:12px;z-index:9;cursor:pointer;user-select:none;transition:background 0.15s}
+#lab-bar:hover{background:#e0f7f0}
+#lab-bar-logo{width:20px;height:20px;object-fit:contain;border-radius:3px;flex-shrink:0}
+#lab-bar-label{font-family:monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#00b89c;font-weight:700}
+#lab-bar-sub{font-size:11px;color:#555;flex:1}
+#lab-bar-count{font-family:monospace;font-size:10px;color:#00b89c;background:rgba(0,184,156,0.1);padding:2px 8px;border-radius:20px}
+#lab-bar-arrow{font-size:10px;color:#00b89c;transition:transform 0.3s}
+#lab-bar.open #lab-bar-arrow{transform:rotate(180deg)}
+
+/* LAB ECOSYSTEM PANEL */
+#lab-panel{background:#fff;border-bottom:1px solid #e0ddd6;overflow:hidden;max-height:0;transition:max-height 0.4s cubic-bezier(0.4,0,0.2,1);flex-shrink:0;z-index:8}
+#lab-panel.open{max-height:260px}
+#lab-panel-inner{padding:14px 18px 16px;display:flex;gap:20px}
+.lab-col{flex:1;min-width:0}
+.lab-col-header{font-family:monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#00b89c;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #e0f7f0;display:flex;align-items:center;gap:6px}
+.lab-col-header span{background:rgba(0,184,156,0.1);color:#00b89c;font-size:8px;padding:1px 6px;border-radius:10px}
+.lab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:3px 8px;max-height:180px;overflow-y:auto;padding-right:4px}
+.lab-grid::-webkit-scrollbar{width:3px}
+.lab-grid::-webkit-scrollbar-thumb{background:#b2eadc;border-radius:2px}
+.lab-co{font-size:11px;color:#333;padding:3px 6px;border-radius:3px;transition:background 0.12s;cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.lab-co:hover{background:#f0fdf8;color:#00b89c}
+.lab-co-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:#00b89c;opacity:0.5}
+.logo{font-family:monospace;font-size:14px;font-weight:700;color:#1a1a1a;letter-spacing:0.1em;white-space:nowrap}.logo span{color:#00b89c}
+.filters{display:flex;gap:5px;flex-wrap:wrap}
+.fbtn{font-family:monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:4px 10px;border:1px solid #d0cdc6;background:#fff;color:#888;cursor:pointer;border-radius:3px;transition:all 0.15s}
+.fbtn:hover{border-color:#1a1a1a;color:#1a1a1a}.fbtn.active{border-color:#1a1a1a;color:#fff;background:#1a1a1a}
+.count{font-family:monospace;font-size:10px;color:#aaa;white-space:nowrap}.count b{color:#00b89c}
+#main{flex:1;display:flex;overflow:hidden;min-height:0}
+#map{flex:1;position:relative}
+#view-toggle{position:absolute;top:12px;left:12px;z-index:5;display:flex;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+.vtbtn{font-family:monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:6px 13px;border:1px solid #d0cdc6;background:#fff;color:#888;cursor:pointer;transition:all 0.15s}
+.vtbtn:first-child{border-right:none}.vtbtn:hover{color:#1a1a1a}.vtbtn.active{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+#unverified-toggle{position:absolute;top:12px;right:12px;z-index:10;font-family:monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border:1px solid #c8a000;background:#fff;color:#a07800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:flex;align-items:center;gap:7px;transition:all 0.2s}
+#unverified-toggle:hover{background:#fffbee}
+#unverified-toggle .arrow{transition:transform 0.3s;font-size:8px}
+#unverified-toggle.open .arrow{transform:rotate(180deg)}
+#unverified-panel{position:absolute;top:48px;right:12px;z-index:9;width:240px;background:#fff;border:1px solid #e8d580;box-shadow:0 4px 16px rgba(0,0,0,0.1);overflow:hidden;max-height:0;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1)}
+#unverified-panel.open{max-height:560px}
+.up-header{padding:10px 13px 7px;border-bottom:1px solid #f0e8b0;background:#fffdf0}
+.up-title{font-family:monospace;font-size:8px;letter-spacing:0.22em;text-transform:uppercase;color:#a07800}
+.up-sub{font-family:monospace;font-size:8px;color:#bbb;margin-top:2px}
+.up-list{padding:4px 0;max-height:440px;overflow-y:auto}
+.up-list::-webkit-scrollbar{width:3px}.up-list::-webkit-scrollbar-thumb{background:#e0ddd6;border-radius:2px}
+.up-item{padding:7px 12px;font-size:11px;color:#666;border-left:2px solid transparent;display:flex;align-items:center;gap:9px;transition:all 0.12s;cursor:pointer}
+.up-item:hover{background:#fffdf0;border-left-color:#c8a000;color:#333}
+.up-logo{width:18px;height:18px;object-fit:contain;border-radius:3px;flex-shrink:0;border:1px solid #eee;background:#fafafa}
+.up-fb{width:18px;height:18px;border-radius:3px;flex-shrink:0;display:none;align-items:center;justify-content:center;font-family:monospace;font-size:8px;font-weight:700;color:#fff;background:#c8a000}
+.up-name{font-size:11px;color:#555;font-weight:500}
+#sidebar{width:250px;background:#fff;border-left:1px solid #e0ddd6;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sh{padding:13px 15px 10px;border-bottom:1px solid #e0ddd6;background:#fafaf7}
+.sh-t{font-family:monospace;font-size:12px;font-weight:700;color:#1a1a1a;letter-spacing:0.04em}
+.sh-s{font-family:monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#aaa;margin-top:2px}
+#clist{flex:1;overflow-y:auto}
+#clist::-webkit-scrollbar{width:3px}#clist::-webkit-scrollbar-thumb{background:#e0ddd6;border-radius:2px}
+.ci{padding:9px 15px;cursor:pointer;border-left:3px solid transparent;display:flex;align-items:center;gap:10px;transition:all 0.12s;border-bottom:1px solid #f5f3ef}
+.ci:hover{background:#fafaf7}.ci.active{background:#f0fdf8;border-left-color:#00b89c}
+.ci-logo{width:22px;height:22px;object-fit:contain;border-radius:4px;flex-shrink:0;border:1px solid #eee;background:#fafafa}
+.ci-fb{width:22px;height:22px;border-radius:4px;flex-shrink:0;display:none;align-items:center;justify-content:center;font-family:monospace;font-size:9px;font-weight:700;color:#fff}
+.cn{font-size:12px;font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc{font-family:monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:#aaa;margin-top:1px}
+.marker-anchor{width:0;height:0;position:relative;overflow:visible}
+.solo-logo{width:32px;height:32px;position:absolute;top:-16px;left:-16px;border-radius:50%;border:2.5px solid #fff;cursor:pointer;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25);transition:box-shadow 0.15s,border-color 0.15s}
+.solo-logo:hover{box-shadow:0 3px 14px rgba(0,0,0,0.35);border-color:#00b89c}
+.solo-logo.active-pin{border-color:#00b89c;box-shadow:0 0 0 4px rgba(0,184,156,0.22),0 3px 14px rgba(0,0,0,0.25)}
+.solo-logo img{width:22px;height:22px;object-fit:contain;display:block;pointer-events:none}
+.solo-logo .fb{width:22px;height:22px;border-radius:50%;display:none;align-items:center;justify-content:center;font-family:monospace;font-size:10px;font-weight:700;color:#fff;pointer-events:none}
+.cluster-btn{width:36px;height:36px;position:absolute;top:-18px;left:-18px;border-radius:50%;background:#1a1a1a;border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:box-shadow 0.15s,background 0.15s;z-index:2}
+.cluster-btn:hover{background:#00b89c;box-shadow:0 3px 14px rgba(0,184,156,0.4)}
+.cluster-plus{color:#fff;font-size:20px;font-weight:300;line-height:1;user-select:none;pointer-events:none;margin-top:-1px}
+.cluster-count{position:absolute;top:-5px;right:-5px;background:#00b89c;color:#fff;font-family:monospace;font-size:8px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;pointer-events:none;z-index:3}
+.cluster-child{width:30px;height:30px;position:absolute;border-radius:50%;background:#fff;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.22);display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:0;transform:scale(0.3);transition:opacity 0.18s ease,transform 0.18s ease;pointer-events:none;cursor:pointer;z-index:4}
+.cluster-child.expanded{opacity:1;transform:scale(1);pointer-events:all}
+.cluster-child:hover{border-color:#00b89c;box-shadow:0 3px 12px rgba(0,184,156,0.45);z-index:10}
+.cluster-child img{width:20px;height:20px;object-fit:contain;pointer-events:none}
+.cluster-child .cfb{width:20px;height:20px;border-radius:50%;display:none;align-items:center;justify-content:center;font-family:monospace;font-size:9px;font-weight:700;color:#fff;pointer-events:none}
+#tip{position:fixed;background:#fff;border:1px solid #e0ddd6;box-shadow:0 4px 14px rgba(0,0,0,0.12);padding:7px 11px;pointer-events:none;z-index:9999;display:none;white-space:nowrap;transform:translate(16px,-50%)}
+#tip .tip-name{font-size:12px;font-weight:600;color:#1a1a1a}
+#tip .tip-cat{font-family:monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;margin-top:2px}
+.mapboxgl-popup-content{background:#fff !important;border:1px solid #e0ddd6 !important;border-radius:0 !important;padding:0 !important;box-shadow:0 8px 28px rgba(0,0,0,0.12) !important;font-family:'DM Sans',system-ui,sans-serif !important;min-width:210px}
+.mapboxgl-popup-tip{border-top-color:#fff !important;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.15)) !important}
+.mapboxgl-popup-close-button{color:#aaa !important;font-size:14px !important;padding:5px 8px !important}
+.mapboxgl-popup-close-button:hover{color:#333 !important;background:transparent !important}
+.popup-inner{padding:14px 16px}
+.popup-logo-wrap{width:38px;height:38px;border:1px solid #eee;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:9px;background:#fafafa}
+.popup-logo{width:28px;height:28px;object-fit:contain}
+.popup-cat{font-family:monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px}
+.popup-name{font-size:15px;font-weight:700;color:#1a1a1a;line-height:1.2;margin-bottom:5px}
+.popup-addr{font-size:11px;color:#999;line-height:1.6}
+.popup-unverified-badge{display:inline-block;font-family:monospace;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;color:#a07800;background:#fffdf0;border:1px solid #e8d580;padding:2px 6px;margin-bottom:8px}
+.popup-stats{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;border-top:1px solid #f0ece3;padding-top:10px}
+.stat-block{display:flex;flex-direction:column;gap:1px}
+.stat-label{font-family:monospace;font-size:7px;letter-spacing:0.18em;text-transform:uppercase;color:#aaa}
+.stat-value{font-size:11px;font-weight:600;color:#1a1a1a;line-height:1.4}
+.stat-traded-yes{color:#00b89c}.stat-traded-no{color:#f57c00}
+.stat-full{grid-column:1/-1}
+.mapboxgl-ctrl-group{background:#fff !important;border:1px solid #e0ddd6 !important;box-shadow:0 2px 8px rgba(0,0,0,0.1) !important}
+.mapboxgl-ctrl-group button{background:#fff !important}
+.mapboxgl-ctrl-attrib{background:rgba(255,255,255,0.85) !important}
+.mapboxgl-ctrl-attrib a{color:#aaa !important}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div class="logo">WYN<span>TECH</span> &nbsp;// MAP</div>
+  <div class="filters">
+    <button class="fbtn active" data-c="All">All</button>
+    <button class="fbtn" data-c="Tech">Tech</button>
+    <button class="fbtn" data-c="VC">VC</button>
+    <button class="fbtn" data-c="Finance">Finance</button>
+    <button class="fbtn" data-c="Media">Media</button>
+    <button class="fbtn" data-c="Coworking">Coworking</button>
+    <button class="fbtn" data-c="Legal">Legal</button>
+  </div>
+  <div class="count">Showing <b id="vc">22</b> verified locations</div>
+</div>
+
+<!-- LAB ECOSYSTEM BAR -->
+<div id="lab-bar" onclick="toggleLabPanel()">
+  <img id="lab-bar-logo" src="https://www.google.com/s2/favicons?domain=thelabmiami.com&sz=64" alt="The LAB" onerror="this.style.display='none'"/>
+  <div id="lab-bar-label">The LAB Miami Ecosystem</div>
+  <div id="lab-bar-sub">72 companies across The Dock &amp; The LAB building</div>
+  <div id="lab-bar-count">72 companies</div>
+  <div id="lab-bar-arrow">▼</div>
+</div>
+
+<!-- LAB ECOSYSTEM PANEL -->
+<div id="lab-panel">
+  <div id="lab-panel-inner">
+    <div class="lab-col">
+      <div class="lab-col-header">// The Dock <span>44</span></div>
+      <div class="lab-grid" id="dock-grid"></div>
+    </div>
+    <div class="lab-col">
+      <div class="lab-col-header">// The LAB Building <span>28</span></div>
+      <div class="lab-grid" id="lab-grid"></div>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="map">
+    <div id="view-toggle">
+      <button class="vtbtn" id="btn-street">Street</button>
+      <button class="vtbtn active" id="btn-satellite">Satellite 3D</button>
+    </div>
+    <button id="unverified-toggle" onclick="toggleUnverified()">
+      <span>Unverified (19)</span><span class="arrow">▼</span>
+    </button>
+    <div id="unverified-panel">
+      <div class="up-header">
+        <div class="up-title">// Unverified Locations</div>
+        <div class="up-sub">Click any company to see details</div>
+      </div>
+      <div class="up-list" id="up-list"></div>
+    </div>
+  </div>
+  <div id="sidebar">
+    <div class="sh"><div class="sh-t">Tech Companies</div><div class="sh-s">// Wynwood Verified</div></div>
+    <div id="clist"></div>
+  </div>
+</div>
+<div id="tip"><div class="tip-name" id="tip-name"></div><div class="tip-cat" id="tip-cat"></div></div>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   MAPBOX TOKEN
+   ════════════════════════════════════════════════════════════════
+   The token below is restricted on the Mapbox dashboard to only
+   work from WynTech's own domain. It's safe to be public: the URL
+   restriction is what protects the account, not secrecy.
+
+   Forking this project? This token won't work on your domain.
+   Get your own free token instead:
+     1. Create a free account at https://www.mapbox.com
+     2. Copy your public token from the Access Tokens page
+     3. Paste it below in place of this one
+     4. (Recommended) Add a URL restriction on mapbox.com scoped
+        to your own domain, so nobody else's traffic counts
+        against your account.
+   ════════════════════════════════════════════════════════════════ */
+mapboxgl.accessToken = 'pk.eyJ1Ijoid2luc3RvbmhvcyIsImEiOiJjbXFoYmFzMmEwOHZlMnJvdXBpZnFidnByIn0.0ybXXdu-MVe6PzTScbyLdA';
+
+const COLORS={Tech:'#00b89c',VC:'#9b4dca',Finance:'#2196f3',Media:'#f57c00',Coworking:'#e53935',Legal:'#6d4c41'};
+function logo(d){return`https://www.google.com/s2/favicons?domain=${d}&sz=64`;}
+
+/* ════════════════════════════════════════════════════════════════
+   COMPANY DATA
+   ════════════════════════════════════════════════════════════════
+   All company records (verified + unverified, with category,
+   location, and financial info) live in companies.json, not here.
+   That's the single open, reusable file — edit it directly to add,
+   correct, or remove a company. No need to touch this script.
+   ════════════════════════════════════════════════════════════════ */
+(async function initMap(){
+let companies=[], STATS={}, unverifiedList=[];
+try{
+  const res=await fetch('companies.json');
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  data.companies.forEach(c=>{
+    STATS[c.name]={worth:c.worth,traded:c.traded,moved:c.movedYear,cat:c.category,domain:c.domain};
+    if(c.verified){
+      companies.push({name:c.name,addr:c.address,cat:c.category,lat:c.lat,lng:c.lng,domain:c.domain});
+    }else{
+      unverifiedList.push(c.name);
+    }
+  });
+}catch(err){
+  console.error('Could not load companies.json:', err);
+  document.getElementById('map').innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#111;color:#ddd;font-family:system-ui,sans-serif;text-align:center;padding:40px;">'+
+    '<div><div style="font-size:1.1rem;margin-bottom:10px;">Couldn\'t load companies.json</div>'+
+    '<div style="font-size:.85rem;opacity:.7;max-width:420px;">This file needs to be served over http(s), not opened directly. '+
+    'Run a local server (e.g. <code>python3 -m http.server</code>) or view it on its hosted URL.</div></div></div>';
+  return;
+}
+
+// All coordinates geocoded exactly via Mapbox API — hardcoded for reliability
+const companyBuildings=[
+  {id:'b_215_24',  color:'#00b89c', height:18, coords:[[-80.199836,25.800064],[-80.199076,25.800064],[-80.199076,25.800504],[-80.199836,25.800504],[-80.199836,25.800064]]},
+  {id:'b_545_26',  color:'#2196f3', height:16, coords:[[-80.204791,25.800880],[-80.204031,25.800880],[-80.204031,25.801320],[-80.204791,25.801320],[-80.204791,25.800880]]},
+  {id:'b_spotify', color:'#1db954', height:12, coords:[[-80.194982,25.799331],[-80.194222,25.799331],[-80.194222,25.799771],[-80.194982,25.799771],[-80.194982,25.799331]]},
+  {id:'b_tiktok',  color:'#555555', height:14, coords:[[-80.202897,25.801004],[-80.202137,25.801004],[-80.202137,25.801444],[-80.202897,25.801444],[-80.202897,25.801004]]},
+  {id:'b_reform',  color:'#9b4dca', height:11, coords:[[-80.201891,25.801022],[-80.201131,25.801022],[-80.201131,25.801462],[-80.201891,25.801462],[-80.201891,25.801022]]},
+  {id:'b_amazon',  color:'#ff9900', height:20, coords:[[-80.197354,25.803961],[-80.196594,25.803961],[-80.196594,25.804401],[-80.197354,25.804401],[-80.197354,25.803961]]},
+  {id:'b_2916',    color:'#e53935', height:18, coords:[[-80.195863,25.804160],[-80.195103,25.804160],[-80.195103,25.804600],[-80.195863,25.804600],[-80.195863,25.804160]]},
+  {id:'b_industr', color:'#e53935', height:14, coords:[[-80.200767,25.803250],[-80.200007,25.803250],[-80.200007,25.803690],[-80.200767,25.803690],[-80.200767,25.803250]]},
+  {id:'b_wework',  color:'#e53935', height:22, coords:[[-80.202074,25.801724],[-80.201314,25.801724],[-80.201314,25.802164],[-80.202074,25.802164],[-80.202074,25.801724]]},
+  {id:'b_barrys',  color:'#e53935', height:9,  coords:[[-80.199020,25.798070],[-80.198260,25.798070],[-80.198260,25.798510],[-80.199020,25.798510],[-80.199020,25.798070]]},
+  {id:'b_lab',     color:'#00b89c', height:12, coords:[[-80.201961,25.802233],[-80.201201,25.802233],[-80.201201,25.802673],[-80.201961,25.802673],[-80.201961,25.802233]]},
+  {id:'b_intrigma',color:'#00b89c', height:11, coords:[[-80.202654,25.801005],[-80.201894,25.801005],[-80.201894,25.801445],[-80.202654,25.801445],[-80.202654,25.801005]]},
+];
+
+// Exact centers of building footprint polygons — popup anchors here
+const BUILDING_CENTERS={
+  "Orrick":              [-80.199456,25.800284],
+  "Atomic":              [-80.199456,25.800284],
+  "Founders Fund":       [-80.199456,25.800284],
+  "Ramp":                [-80.199456,25.800284],
+  "Open Evidence":       [-80.199456,25.800284],
+  "Live Nation":         [-80.199456,25.800284],
+  "MIX (MIAX)":          [-80.204411,25.801100],
+  "Sony Music":          [-80.204411,25.801100],
+  "Milo Credit":         [-80.204411,25.801100],
+  "PwC":                 [-80.204411,25.801100],
+  "Gemini Exchange":     [-80.204411,25.801100],
+  "Spotify":             [-80.194602,25.799551],
+  "TikTok":              [-80.202517,25.801224],
+  "Reformation Partners":[-80.201511,25.801242],
+  "Amazon":              [-80.196974,25.804181],
+  "Mindspace":           [-80.195483,25.804380],
+  "Open Store":          [-80.195483,25.804380],
+  "Industrious":         [-80.200387,25.803470],
+  "WeWork":              [-80.201694,25.801944],
+  "Barry's":             [-80.198640,25.798290],
+  "The LAB Miami":       [-80.201581,25.802453],
+  "Intrigma":            [-80.202274,25.801225],
+};
+
+
+const clusterCenters={
+  "215 NW 24th St, Miami FL 33127":   {lat:25.800284, lng:-80.199456},
+  "545 NW 26th St, Miami FL 33127":   {lat:25.801100, lng:-80.204411},
+  "2916 N Miami Ave, Miami FL 33127": {lat:25.804380, lng:-80.195483},
+};
+function getClusterCenter(addr){const c=clusterCenters[addr];return c||null;}
+
+function buildUnverifiedList(){
+  const el=document.getElementById('up-list');
+  el.innerHTML='';
+  unverifiedList.forEach(name=>{
+    const st=STATS[name]||{};
+    const domain=st.domain||'';
+    const item=document.createElement('div');
+    item.className='up-item';
+    const img=document.createElement('img');
+    img.className='up-logo';img.src=logo(domain);img.alt=name;
+    const fb=document.createElement('div');
+    fb.className='up-fb';fb.textContent=name.charAt(0);
+    img.addEventListener('error',()=>{img.style.display='none';fb.style.display='flex';});
+    const nm=document.createElement('div');nm.className='up-name';nm.textContent=name;
+    item.appendChild(img);item.appendChild(fb);item.appendChild(nm);
+    item.addEventListener('click',()=>showUnverifiedPopup(name,st,domain));
+    el.appendChild(item);
+  });
+}
+buildUnverifiedList();
+
+window.toggleUnverified=function(){
+  document.getElementById('unverified-panel').classList.toggle('open');
+  document.getElementById('unverified-toggle').classList.toggle('open');
+}
+
+let activePopup=null,activePinEl=null;
+
+function makePopupHTML(name,addr,isUnverified,st,domain,catColor){
+  const tradedClass=st.traded==='Private'||st.traded.startsWith('Private')?'stat-traded-no':'stat-traded-yes';
+  const badge=isUnverified?`<div class="popup-unverified-badge">⚠ Unverified Location</div>`:'';
+  const addrLine=addr?`<div class="popup-addr">${addr}</div>`:'';
+  return`<div class="popup-inner">
+    <div class="popup-logo-wrap"><img class="popup-logo" src="${logo(domain)}" alt="${name}" onerror="this.style.display='none'"/></div>
+    ${badge}
+    <div class="popup-cat" style="color:${catColor}">${st.cat||'Tech'}</div>
+    <div class="popup-name">${name}</div>
+    ${addrLine}
+    <div class="popup-stats">
+      <div class="stat-block stat-full">
+        <div class="stat-label">Valuation / Worth</div>
+        <div class="stat-value">${st.worth||'—'}</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Publicly Traded</div>
+        <div class="stat-value ${tradedClass}">${st.traded||'—'}</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Moved to Wynwood</div>
+        <div class="stat-value">${st.moved||'—'}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function showUnverifiedPopup(name,st,domain){
+  if(activePopup)activePopup.remove();
+  const catColor=COLORS[st.cat]||'#a07800';
+  const popup=new mapboxgl.Popup({closeButton:true,closeOnClick:true,maxWidth:'260px',anchor:'center'})
+    .setLngLat([-80.2010,25.7970])
+    .setHTML(makePopupHTML(name,null,true,st,domain,catColor))
+    .addTo(map);
+  activePopup=popup;
+}
+
+const tip=document.getElementById('tip'),tipName=document.getElementById('tip-name'),tipCat=document.getElementById('tip-cat');
+function showTip(e,name,cat,color){tipName.textContent=name;tipCat.textContent=cat;tipCat.style.color=color||'#888';tip.style.display='block';tip.style.left=e.clientX+'px';tip.style.top=e.clientY+'px';}
+function moveTip(e){tip.style.left=e.clientX+'px';tip.style.top=e.clientY+'px';}
+function hideTip(){tip.style.display='none';}
+
+// Group by address
+const groups={};
+companies.forEach((co,i)=>{if(!groups[co.addr])groups[co.addr]=[];groups[co.addr].push({...co,idx:i});});
+function childOffsets(n){return Array.from({length:n},(_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return{dx:Math.cos(a)*52,dy:Math.sin(a)*52};});}
+
+let currentStyle='satellite';
+const markerData=[],allMarkerWraps=[];
+
+const map=new mapboxgl.Map({
+  container:'map',
+  style:'mapbox://styles/mapbox/satellite-streets-v12',
+  center:[-80.2010,25.8000],
+  zoom:15.3,pitch:55,bearing:-20,
+});
+map.addControl(new mapboxgl.NavigationControl(),'bottom-right');
+map.addControl(new mapboxgl.ScaleControl(),'bottom-left');
+
+// ── DIAGNOSTIC SYSTEM ──
+// Intercepts actual Mapbox network requests so we capture real HTTP status
+// codes (401/403/429/etc) rather than guessing from error message text.
+const diagLog=[];
+const origFetch=window.fetch;
+window.fetch=function(...args){
+  const url=args[0]instanceof Request?args[0].url:args[0];
+  const isMapbox=typeof url==='string'&&url.includes('mapbox.com');
+  const p=origFetch.apply(this,args);
+  if(isMapbox){
+    p.then(res=>{
+      if(!res.ok){
+        diagLog.push({url,status:res.status,statusText:res.statusText,time:Date.now()});
+        if(diagLog.length>20)diagLog.shift();
+        maybeShowDiagnostic();
+      }
+    }).catch(err=>{
+      diagLog.push({url,status:0,statusText:err.message||'Network error (blocked/offline)',time:Date.now()});
+      if(diagLog.length>20)diagLog.shift();
+      maybeShowDiagnostic();
+    });
+  }
+  return p;
+};
+
+function diagnosisFor(status,statusText,url){
+  const isTile=/\.mapbox\.com\/.*(tiles|styles)|\/v4\/|\/raster\/|\/styles\/v1/i.test(url||'');
+  if(status===401){
+    return{
+      title:'Token Rejected (401 Unauthorized)',
+      detail:'Mapbox is rejecting this access token outright. This usually means the token was deleted, regenerated, or revoked in your Mapbox account since this file was last opened — tokens can be invalidated at any time from the dashboard, even ones marked "no expiration." Go to account.mapbox.com/access-tokens and confirm this exact token still appears in your active list.'
+    };
+  }
+  if(status===403){
+    return{
+      title:'Forbidden (403)',
+      detail:"The token is valid but Mapbox is blocking this specific request. Likely causes: a URL restriction on the token that does not match how this file is being opened (file:// vs http://), or the token lacks the styles:tiles scope needed for satellite imagery. Check the token's \"URL restrictions\" and \"Scopes\" sections in your Mapbox dashboard."
+    };
+  }
+  if(status===429){
+    return{
+      title:'Rate Limited (429)',
+      detail:'Too many requests were sent to Mapbox in a short window and it is temporarily throttling this token. This usually clears on its own within a few minutes.'
+    };
+  }
+  if(status===0){
+    return{
+      title:'Network Request Blocked',
+      detail:"The browser could not even reach Mapbox's servers ("+statusText+"). This points to something on your machine or network blocking the request — a browser extension (ad blocker, privacy extension), antivirus web shield, or a network-level content filter. Try opening this same file in an Incognito window with extensions disabled, or on a different network (phone hotspot), to confirm."
+    };
+  }
+  if(status>=500){
+    return{
+      title:'Mapbox Server Error ('+status+')',
+      detail:"Mapbox's servers returned an error unrelated to your token or account. This is on their end — check status.mapbox.com for an active incident."
+    };
+  }
+  return{
+    title:'Tile Request Failed ('+status+' '+statusText+')',
+    detail:'An unexpected response was returned for a Mapbox resource. Check the Network tab in DevTools (F12) for the full request URL and response body for more detail.'
+  };
+}
+
+let diagnosticShown=false;
+function maybeShowDiagnostic(){
+  if(diagnosticShown)return;
+  // Wait briefly to collect a representative sample of failures before deciding
+  setTimeout(()=>{
+    if(diagLog.length===0)return;
+    diagnosticShown=true;
+    const latest=diagLog[diagLog.length-1];
+    const diag=diagnosisFor(latest.status,latest.statusText,latest.url);
+    showDiagnosticBanner(diag,latest);
+  },1200);
+}
+
+function showDiagnosticBanner(diag,sample){
+  let banner=document.getElementById('map-error-banner');
+  if(banner)banner.remove();
+  banner=document.createElement('div');
+  banner.id='map-error-banner';
+  banner.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #e53935;border-radius:8px;padding:18px 22px;max-width:380px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.25);font-family:system-ui,sans-serif';
+  const failCount=diagLog.length;
+  banner.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:8px;height:8px;border-radius:50%;background:#e53935;flex-shrink:0"></div>
+      <div style="font-weight:700;color:#e53935;font-size:14px">Map Tiles Not Loading</div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:6px">${diag.title}</div>
+    <div style="font-size:12px;color:#555;line-height:1.6;margin-bottom:10px">${diag.detail}</div>
+    <div style="font-size:10px;font-family:monospace;color:#999;background:#f7f7f5;padding:8px 10px;border-radius:4px;word-break:break-all;line-height:1.5">
+      Status: ${sample.status} ${sample.statusText}<br/>
+      Failed requests: ${failCount}<br/>
+      Token (first 24 chars): ${mapboxgl.accessToken.slice(0,24)}...<br/>
+      Sample URL: ${sample.url.split('?')[0]}
+    </div>
+    <button onclick="document.getElementById('map-error-banner').remove()" style="margin-top:12px;font-family:monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:6px 14px;border:1px solid #d0cdc6;background:#fff;color:#666;cursor:pointer;border-radius:4px">Dismiss</button>
+  `;
+  document.getElementById('map').appendChild(banner);
+}
+
+// Also catch Mapbox GL's own internal error events (style/parsing issues)
+// but filter out harmless layer/source timing warnings
+map.on('error',(e)=>{
+  const msg=(e&&e.error&&e.error.message)?e.error.message:'';
+  if(/does not exist|already exists|cannot be removed|There is already a source/i.test(msg)){
+    console.warn('Non-fatal map warning:',msg);
+    return;
+  }
+  console.error('Mapbox GL error:',msg,e);
+});
+
+
+document.getElementById('btn-street').addEventListener('click',()=>{
+  if(currentStyle==='street')return;currentStyle='street';
+  map.setStyle('mapbox://styles/mapbox/light-v11');
+  map.easeTo({pitch:0,bearing:0,duration:800});
+  document.getElementById('btn-street').classList.add('active');
+  document.getElementById('btn-satellite').classList.remove('active');
+  map.once('style.load',()=>{addBoundary();addBuildingLayers();});
+});
+document.getElementById('btn-satellite').addEventListener('click',()=>{
+  if(currentStyle==='satellite')return;currentStyle='satellite';
+  map.setStyle('mapbox://styles/mapbox/satellite-streets-v12');
+  map.easeTo({pitch:55,bearing:-20,zoom:15.5,duration:1200});
+  document.getElementById('btn-satellite').classList.add('active');
+  document.getElementById('btn-street').classList.remove('active');
+  map.once('style.load',()=>{addBoundary();addBuildingLayers();});
+});
+
+function addBoundary(){
+  ['wynwood-fill','wynwood-border'].forEach(id=>{if(map.getLayer(id))map.removeLayer(id);});
+  if(map.getSource('wynwood'))map.removeSource('wynwood');
+  map.addSource('wynwood',{type:'geojson',data:{type:'Feature',geometry:{type:'Polygon',
+    coordinates:[[[-80.2090,25.8035],[-80.1910,25.8035],[-80.1910,25.7890],[-80.2090,25.7890],[-80.2090,25.8035]]]
+  }}});
+  map.addLayer({id:'wynwood-fill',type:'fill',source:'wynwood',paint:{'fill-color':'#00b89c','fill-opacity':0.04}});
+  map.addLayer({id:'wynwood-border',type:'line',source:'wynwood',paint:{'line-color':'#00b89c','line-width':1.5,'line-dasharray':[4,3],'line-opacity':0.5}});
+}
+
+function addBuildingLayers(){
+  // In 3D satellite mode: add Mapbox's real composite building layer first
+  // This renders the actual architectural geometry of all Wynwood buildings
+  if(currentStyle==='satellite'){
+    if(!map.getLayer('all-3d-buildings')){
+      map.addLayer({
+        id:'all-3d-buildings',
+        source:'composite',
+        'source-layer':'building',
+        filter:['==','extrude','true'],
+        type:'fill-extrusion',
+        minzoom:14,
+        paint:{
+          'fill-extrusion-color':'#c8bfb0',
+          'fill-extrusion-height':['interpolate',['linear'],['zoom'],14,0,14.05,['get','height']],
+          'fill-extrusion-base':['interpolate',['linear'],['zoom'],14,0,14.05,['get','min_height']],
+          'fill-extrusion-opacity':0.65,
+        }
+      });
+    }
+  }
+
+  // Company highlight overlays — tighter footprints strictly inside blocks
+  companyBuildings.forEach(b=>{
+    ['fill','extrude','outline'].forEach(s=>{if(map.getLayer(`${b.id}-${s}`))map.removeLayer(`${b.id}-${s}`);});
+    if(map.getSource(b.id))map.removeSource(b.id);
+    map.addSource(b.id,{type:'geojson',data:{
+      type:'Feature',
+      properties:{height:b.height},
+      geometry:{type:'Polygon',coordinates:[b.coords]}
+    }});
+    if(currentStyle==='satellite'){
+      // Colored extrusion sits on top of the real building, tinted per company
+      map.addLayer({
+        id:`${b.id}-extrude`,
+        type:'fill-extrusion',
+        source:b.id,
+        paint:{
+          'fill-extrusion-color':b.color,
+          'fill-extrusion-height':b.height,
+          'fill-extrusion-base':0,
+          'fill-extrusion-opacity':0.8,
+          'fill-extrusion-vertical-gradient':true,
+        }
+      });
+      map.addLayer({
+        id:`${b.id}-outline`,
+        type:'line',source:b.id,
+        paint:{'line-color':'rgba(255,255,255,0.9)','line-width':1.2,'line-opacity':0.9}
+      });
+    } else {
+      map.addLayer({id:`${b.id}-fill`,type:'fill',source:b.id,paint:{'fill-color':b.color,'fill-opacity':0.20}});
+      map.addLayer({id:`${b.id}-outline`,type:'line',source:b.id,paint:{'line-color':b.color,'line-width':2,'line-opacity':0.85}});
+    }
+  });
+}
+
+// BUILDING_CENTERS populated dynamically via geocoding at startup
+
+function openPopup(co,lngLat,triggerEl){
+  hideTip();
+  if(activePopup)activePopup.remove();
+  if(activePinEl&&activePinEl!==triggerEl)activePinEl.classList&&activePinEl.classList.remove('active-pin');
+  activePinEl=triggerEl;
+  triggerEl.classList&&triggerEl.classList.add('active-pin');
+  const color=COLORS[co.cat];
+  const st=STATS[co.name]||{worth:'—',traded:'—',moved:'—',cat:co.cat};
+  // Always use geocoded building center — this is the same coord the 3D box is centered on
+  const bc=BUILDING_CENTERS[co.name];
+  const popupLngLat = bc ? bc : lngLat;
+  const popup=new mapboxgl.Popup({
+    offset:0,          // no displacement from the coordinate
+    anchor:'bottom',   // popup sits with its bottom tip on the exact coordinate
+    closeButton:true,
+    closeOnClick:false,
+    maxWidth:'260px'
+  })
+    .setLngLat(popupLngLat)
+    .setHTML(makePopupHTML(co.name,co.addr,false,st,co.domain,color))
+    .addTo(map);
+  popup.on('close',()=>{triggerEl.classList&&triggerEl.classList.remove('active-pin');if(activePinEl===triggerEl)activePinEl=null;document.querySelectorAll('.ci').forEach(c=>c.classList.remove('active'));});
+  activePopup=popup;
+  map.easeTo({center:popupLngLat, zoom:Math.max(map.getZoom(),15.8), duration:500});
+  document.querySelectorAll('.ci').forEach(c=>c.classList.remove('active'));
+  const si=document.querySelector(`.ci[data-i="${co.idx}"]`);
+  if(si){si.classList.add('active');si.scrollIntoView({block:'nearest',behavior:'smooth'});}
+}
+
+map.on('load',()=>{
+  // Wait for the base style to be fully ready before adding overlays
+  if(map.isStyleLoaded()){
+    addBoundary();addBuildingLayers();
+  }else{
+    map.once('idle',()=>{addBoundary();addBuildingLayers();});
+  }
+  Object.entries(groups).forEach(([addr,cos])=>{
+    const ctr=getClusterCenter(addr)||{lat:cos[0].lat,lng:cos[0].lng};
+    const isCluster=cos.length>1;
+    const anchor=document.createElement('div');anchor.className='marker-anchor';
+    if(isCluster){
+      const btn=document.createElement('div');btn.className='cluster-btn';
+      const plus=document.createElement('span');plus.className='cluster-plus';plus.textContent='+';
+      const badge=document.createElement('div');badge.className='cluster-count';badge.textContent=cos.length;
+      btn.appendChild(plus);btn.appendChild(badge);anchor.appendChild(btn);
+      btn.addEventListener('mouseenter',e=>showTip(e,`${cos.length} companies`,addr.split(',')[0],'#888'));
+      btn.addEventListener('mousemove',e=>moveTip(e));
+      btn.addEventListener('mouseleave',e=>{if(!anchor.contains(e.relatedTarget))hideTip();});
+      const offsets=childOffsets(cos.length);const children=[];
+      cos.forEach((co,ci)=>{
+        const color=COLORS[co.cat];const{dx,dy}=offsets[ci];
+        const child=document.createElement('div');child.className='cluster-child';
+        child.style.top=`${dy-15}px`;child.style.left=`${dx-15}px`;child.style.transitionDelay=`${ci*0.02}s`;
+        const img=document.createElement('img');img.src=logo(co.domain);img.alt=co.name;
+        const cfb=document.createElement('div');cfb.className='cfb';cfb.style.background=color;cfb.textContent=co.name.charAt(0);
+        img.addEventListener('error',()=>{img.style.display='none';cfb.style.display='flex';});
+        child.appendChild(img);child.appendChild(cfb);
+        child.addEventListener('mouseenter',e=>{e.stopPropagation();showTip(e,co.name,co.cat,color);});
+        child.addEventListener('mousemove',e=>{e.stopPropagation();moveTip(e);});
+        child.addEventListener('mouseleave',e=>{e.stopPropagation();if(!anchor.contains(e.relatedTarget))hideTip();});
+        child.addEventListener('click',e=>{e.stopPropagation();openPopup(co,[co.lng,co.lat],child);});
+        anchor.appendChild(child);children.push(child);markerData[co.idx]={el:child,co};
+      });
+      let locked=false,hovered=false;
+      function expand(){if(hovered)return;hovered=true;children.forEach(c=>c.classList.add('expanded'));}
+      function collapse(e){if(locked)return;if(anchor.contains(e.relatedTarget))return;hovered=false;children.forEach(c=>c.classList.remove('expanded'));hideTip();}
+      btn.addEventListener('click',e=>{e.stopPropagation();hideTip();locked=!locked;if(locked){plus.textContent='×';children.forEach(c=>c.classList.add('expanded'));}else{plus.textContent='+';if(!hovered)children.forEach(c=>c.classList.remove('expanded'));}});
+      btn.addEventListener('mouseenter',expand);btn.addEventListener('mouseleave',collapse);
+      children.forEach(c=>{c.addEventListener('mouseenter',expand);c.addEventListener('mouseleave',collapse);});
+      map.on('click',()=>{if(locked){locked=false;hovered=false;plus.textContent='+';children.forEach(c=>c.classList.remove('expanded'));}});
+    } else {
+      const co=cos[0];const color=COLORS[co.cat];
+      const solo=document.createElement('div');solo.className='solo-logo';
+      const img=document.createElement('img');img.src=logo(co.domain);img.alt=co.name;
+      const fb=document.createElement('div');fb.className='fb';fb.style.background=color;fb.textContent=co.name.charAt(0);
+      img.addEventListener('error',()=>{img.style.display='none';fb.style.display='flex';});
+      solo.appendChild(img);solo.appendChild(fb);anchor.appendChild(solo);
+      solo.addEventListener('mouseenter',e=>showTip(e,co.name,co.cat,color));
+      solo.addEventListener('mousemove',e=>moveTip(e));
+      solo.addEventListener('mouseleave',()=>hideTip());
+      solo.addEventListener('click',e=>{e.stopPropagation();openPopup(co,[co.lng,co.lat],solo);});
+      markerData[co.idx]={el:solo,co};allMarkerWraps.push({anchor,cos:[co],addr});
+    }
+    new mapboxgl.Marker({element:anchor,anchor:'center'}).setLngLat([ctr.lng,ctr.lat]).addTo(map);
+    if(isCluster)allMarkerWraps.push({anchor,cos,addr});
+  });
+  buildSidebar('All');
+});
+
+map.on('click',()=>{
+  if(activePopup){activePopup.remove();activePopup=null;}
+  if(activePinEl){activePinEl.classList&&activePinEl.classList.remove('active-pin');activePinEl=null;}
+  document.querySelectorAll('.ci').forEach(c=>c.classList.remove('active'));
+  hideTip();
+});
+
+function buildSidebar(filter){
+  const list=document.getElementById('clist');list.innerHTML='';let count=0;
+  companies.forEach((co,i)=>{
+    if(filter!=='All'&&co.cat!==filter)return;count++;
+    const color=COLORS[co.cat];
+    const div=document.createElement('div');div.className='ci';div.dataset.i=i;
+    const li=document.createElement('img');li.className='ci-logo';li.src=logo(co.domain);li.alt=co.name;
+    const fb=document.createElement('div');fb.className='ci-fb';fb.style.background=color;fb.textContent=co.name.charAt(0);
+    li.addEventListener('error',()=>{li.style.display='none';fb.style.display='flex';});
+    const info=document.createElement('div');
+    info.innerHTML=`<div class="cn">${co.name}</div><div class="cc" style="color:${color}">${co.cat}</div>`;
+    div.appendChild(li);div.appendChild(fb);div.appendChild(info);
+    div.addEventListener('click',()=>{const md=markerData[i];if(!md)return;openPopup(co,[co.lng,co.lat],md.el);});
+    list.appendChild(div);
+  });
+  document.getElementById('vc').textContent=count;
+}
+
+document.querySelectorAll('.fbtn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');const f=btn.dataset.c;
+    if(activePopup){activePopup.remove();activePopup=null;}
+    if(activePinEl){activePinEl.classList&&activePinEl.classList.remove('active-pin');activePinEl=null;}
+    hideTip();
+    allMarkerWraps.forEach(({anchor,cos})=>{anchor.style.display=(f==='All'||cos.some(c=>c.cat===f))?'':'none';});
+    buildSidebar(f);
+  });
+});
+
+// ── LAB ECOSYSTEM PANEL ──
+const DOCK_COMPANIES=[
+  {name:"AIVO"},{name:"Alchemy"},{name:"Always in Flux Industries"},
+  {name:"BitBasel"},{name:"Bits of Stock"},{name:"Bonding Health"},
+  {name:"Bundle IQ"},{name:"Chummy's Shoes"},{name:"Coinward Syndicate"},
+  {name:"Compara Online"},{name:"DIBS Parking"},{name:"Da Blue Box"},
+  {name:"Dtales US"},{name:"Fintrade Software"},{name:"Goldman Properties"},
+  {name:"Good Feeling Product"},{name:"Gusaga"},{name:"Intrigma"},
+  {name:"Jetlane"},{name:"Kite Equity"},{name:"Le Gourmand International"},
+  {name:"Leefy Organics"},{name:"MUD Foundation"},{name:"Markeltree"},
+  {name:"Miami EdTech"},{name:"Miami Kitchen Incubator"},{name:"Move America"},
+  {name:"Nestron AI"},{name:"Patterned"},{name:"Peach LED"},
+  {name:"Soap Payments"},{name:"Starlight AI"},{name:"Superteam"},
+  {name:"Talking Schema"},{name:"The Minty Lab"},{name:"Titan Capital Partners"},
+  {name:"Trampoline Health"},{name:"Valloni Studios"},{name:"Virtus Flow"},
+  {name:"Vital"},{name:"WRTH"},{name:"Web Design Miami Company"},
+  {name:"You Health"},{name:"Stealth Startup"},
+];
+
+const LAB_COMPANIES=[
+  {name:"AccessGrid"},{name:"Acium"},{name:"BLEE Hackathons"},
+  {name:"Bernstein Private Wealth Management"},{name:"Breakthrough Partners"},
+  {name:"Devpost / Miami Hack Week"},{name:"Focal VC"},{name:"GlobalNodes"},
+  {name:"Goldzweig Law"},{name:"Grotto Baths"},{name:"JFW & Co."},
+  {name:"JM Studios"},{name:"Maxed"},{name:"Miami AI Hub / eMerge Americas"},
+  {name:"MoveAmerica"},{name:"NOGA Therapeutics"},{name:"Pillar Security"},
+  {name:"Podcast Launch Lab"},{name:"Profit Recipe"},{name:"RRE Ventures"},
+  {name:"Sandmont"},{name:"Satta Labs"},{name:"Scoutica"},
+  {name:"Searcle AI"},{name:"Shift Up Solutions"},{name:"Ventures Unknown Capital"},
+  {name:"Volk Group"},{name:"eMerge Americas"},
+];
+
+function buildLabPanel(){
+  function fillGrid(id, list){
+    const el=document.getElementById(id);
+    el.innerHTML='';
+    list.forEach(co=>{
+      const div=document.createElement('div');
+      div.className='lab-co';
+      div.innerHTML=`<div class="lab-co-dot"></div>${co.name}`;
+      div.title=co.name;
+      el.appendChild(div);
+    });
+  }
+  fillGrid('dock-grid', DOCK_COMPANIES);
+  fillGrid('lab-grid', LAB_COMPANIES);
+}
+buildLabPanel();
+
+window.toggleLabPanel=function(){
+  const bar=document.getElementById('lab-bar');
+  const panel=document.getElementById('lab-panel');
+  bar.classList.toggle('open');
+  panel.classList.toggle('open');
+}
+})();
+</script>
+</body>
+</html>
