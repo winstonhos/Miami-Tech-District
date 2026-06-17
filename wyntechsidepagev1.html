@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<title>The Start: How Wynwood Was Built</title>
+<meta name="description" content="From a 1920s warehouse district to Miami's tech hub. Walk the timeline of how Wynwood became what it is today, anchored by The LAB Miami." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:       #FAFAF8;
+    --bg-2:     #F1EFE9;
+    --bg-3:     #E6E3DC;
+    --ink:      #111111;
+    --ink-dim:  #4C4C58;
+    --ink-faint:#8A8A96;
+    --teal:     #00A88C;
+    --coral:    #E03A3F;
+    --yellow:   #C58C00;
+    --purple:   #7040D8;
+    --line:     rgba(0,0,0,0.09);
+    --nav-h: 72px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--teal); color: #fff; }
+
+  h1, h2, h3, .display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-weight: 400; line-height: 0.92; letter-spacing: 0.01em;
+  }
+  .label {
+    font-family: 'Space Mono', monospace; font-size: 0.74rem;
+    letter-spacing: 0.28em; text-transform: uppercase; color: var(--teal);
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { width: min(1180px, 90vw); margin: 0 auto; }
+
+  /* ---------- NAV (shared with About page) ---------- */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h);
+    display: flex; align-items: center; z-index: 100;
+    background: rgba(250,250,248,0.88); backdrop-filter: blur(16px);
+    border-bottom: 1px solid transparent; transition: border-color .3s, background .3s;
+  }
+  nav.scrolled { border-bottom-color: var(--line); }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; width: min(1180px, 92vw); }
+  .brand { display: flex; align-items: center; gap: .7rem; }
+  .brand-logo { display: flex; align-items: center; }
+  .brand-logo svg { height: 26px; width: auto; color: var(--ink); display: block; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1; }
+  .brand-text .bt1 { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: .18em; color: var(--ink); }
+  .brand-text .bt2 { font-family: 'Space Mono', monospace; font-size: .55rem; letter-spacing: .22em; text-transform: uppercase; color: var(--teal); margin-top: 1px; }
+
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-toggle { display:none; background:none; border:0; color:var(--ink); font-size:1.4rem; cursor:pointer; }
+  .nav-links a {
+    font-family: 'Space Mono', monospace; font-size: .72rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-dim); position: relative; padding: 4px 0;
+    transition: color .25s; cursor: pointer;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; left: 0; bottom: -2px; height: 2px; width: 0;
+    background: var(--teal); transition: width .25s;
+  }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-links a.active { color: var(--ink); }
+  .nav-links a.active::after { width: 100%; }
+
+  .nav-right { display: flex; align-items: center; gap: 1.2rem; }
+
+  .page-dd { position: relative; }
+  .page-dd-trigger {
+    font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
+    color: var(--ink-dim); background: none; border: 0; cursor: pointer; padding: 4px 0;
+    display: inline-flex; align-items: center; gap: .45rem; transition: color .25s;
+  }
+  .page-dd-trigger:hover, .page-dd.open .page-dd-trigger { color: var(--ink); }
+  .page-dd-trigger .caret { transition: transform .25s; font-size: .6rem; }
+  .page-dd.open .page-dd-trigger .caret { transform: rotate(180deg); }
+  .page-dd-menu {
+    position: absolute; top: calc(100% + 12px); right: 0; min-width: 220px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.12); padding: .5rem; opacity: 0; visibility: hidden;
+    transform: translateY(-6px); transition: opacity .2s, transform .2s, visibility .2s; z-index: 120;
+  }
+  .page-dd.open .page-dd-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  .page-dd-item { display: block; padding: .7rem .8rem; border-radius: 5px; transition: background .2s; }
+  .page-dd-item:hover { background: var(--bg-2); }
+  .page-dd-item.current { background: rgba(0,168,140,.08); }
+  .page-dd-item .pi-title { font-family:'Bebas Neue',sans-serif; font-size: 1.25rem; letter-spacing:.04em; color: var(--ink); line-height: 1; }
+  .page-dd-item.current .pi-title { color: var(--teal); }
+  .page-dd-item .pi-desc { font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; color: var(--ink-faint); margin-top:.25rem; }
+  .page-dd-divider { height:1px; background: var(--line); margin:.5rem .4rem; }
+  .page-dd-cta {
+    display:block; text-align:center; margin:.2rem; padding:.7rem .8rem; border-radius:5px;
+    background: var(--teal); color:#fff; font-family:'Space Mono',monospace; font-size:.72rem;
+    letter-spacing:.12em; text-transform:uppercase; transition: all .2s;
+  }
+  .page-dd-cta:hover { box-shadow: 0 4px 18px rgba(0,168,140,.32); }
+
+  /* ---------- HERO ---------- */
+  #start-hero { padding-top: calc(var(--nav-h) + clamp(60px, 9vh, 120px)); padding-bottom: clamp(40px, 6vh, 80px); position: relative; overflow: hidden; }
+
+  /* ---------- NARRATIVE SECTION ---------- */
+  #narrative { background: var(--bg); padding: clamp(70px,9vh,120px) 0; }
+  .narr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2.5rem,5vw,6rem); align-items: start; margin-top: 3rem; }
+  .narr-col h3 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.8rem,3.5vw,2.8rem); text-transform: uppercase; line-height: 0.95; margin-bottom: 1rem; }
+  .narr-col h3 .hl { color: var(--teal); }
+  .narr-col h3 .hl-coral { color: var(--coral); }
+  .narr-col p { color: var(--ink-dim); font-size: 1.05rem; margin-bottom: 1rem; line-height: 1.75; }
+  .narr-col p:last-child { margin-bottom: 0; }
+  .narr-divider { width: 40px; height: 3px; background: var(--coral); margin-bottom: 1.4rem; border-radius: 2px; }
+  .narr-quote {
+    margin: 3rem 0 0; padding: 2rem 2.4rem; background: var(--bg-2);
+    border-left: 4px solid var(--teal); border-radius: 0 8px 8px 0;
+  }
+  .narr-quote blockquote { font-size: clamp(1rem,1.8vw,1.2rem); color: var(--ink); font-style: italic; line-height: 1.65; }
+  .narr-quote cite { display: block; margin-top: .9rem; font-family: 'Space Mono', monospace; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--teal); font-style: normal; }
+  .narr-stat-stack { display: flex; flex-direction: column; gap: 1.2rem; margin-top: 2rem; }
+  .narr-stat { border: 1px solid var(--line); border-radius: 8px; padding: 1.4rem 1.6rem; background: var(--bg); position: relative; overflow: hidden; }
+  .narr-stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--coral); }
+  .narr-stat .ns-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; line-height: 1; color: var(--coral); }
+  .narr-stat .ns-label { font-family: 'Space Mono', monospace; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); margin-top: .3rem; }
+  @media (max-width: 720px) { .narr-grid { grid-template-columns: 1fr; } }
+  .grid-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 75% 80% at 30% 30%, #000 35%, transparent 100%);
+  }
+  .hero-inner { position: relative; z-index: 2; }
+  .start-tag { display: inline-flex; align-items: center; gap: .6rem; margin-bottom: 1.4rem; }
+  .start-tag .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); }
+  h1.start-title { font-size: clamp(3rem, 9vw, 7.5rem); text-transform: uppercase; max-width: 16ch; }
+  .start-title .a { color: var(--ink); }
+  .start-title .b { color: var(--teal); }
+  .start-sub { font-size: clamp(1.05rem, 2vw, 1.35rem); color: var(--ink-dim); max-width: 56ch; margin-top: 1.3rem; }
+  .start-sub strong { color: var(--ink); font-weight: 700; }
+  .scroll-hint { font-family:'Space Mono',monospace; font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; color: var(--ink-faint); margin-top: 2.2rem; display: inline-flex; align-items: center; gap:.5rem; }
+
+  /* ---------- TIMELINE ---------- */
+  #timeline { background: var(--bg-2); padding: clamp(60px,8vh,110px) 0; }
+  .tl-head { margin-bottom: 2.4rem; max-width: 60ch; }
+  .tl-head h2 { font-size: clamp(2.2rem,5vw,4rem); text-transform: uppercase; margin:.4rem 0; }
+  .tl-head p { color: var(--ink-dim); font-size: 1.05rem; max-width: 54ch; }
+
+  /* The track: horizontal, scrollable on small screens */
+  .tl-scroll { position: relative; overflow-x: auto; padding: 2.5rem 0 1.4rem; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .tl-track { position: relative; min-width: 920px; padding: 0 30px; }
+  .tl-line { position: absolute; left: 30px; right: 30px; top: 19px; height: 3px; background: linear-gradient(90deg, var(--ink-faint), var(--teal)); border-radius: 3px; }
+  .tl-line .fill { position:absolute; left:0; top:0; bottom:0; width:0; background: var(--coral); border-radius:3px; transition: width .4s ease; }
+  .tl-dots { position: relative; display: flex; justify-content: space-between; }
+  .tl-node { position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; flex: 1; min-width: 0; }
+  .tl-dot {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--bg);
+    border: 3px solid var(--ink-faint); display: flex; align-items: center; justify-content: center;
+    font-family:'Space Mono',monospace; font-size:.7rem; font-weight:700; color: var(--ink-dim);
+    transition: all .25s; z-index: 2; position: relative;
+  }
+  .tl-node:hover .tl-dot { transform: scale(1.12); border-color: var(--teal); color: var(--ink); }
+  .tl-node.active .tl-dot { background: var(--coral); border-color: var(--coral); color: #fff; box-shadow: 0 6px 22px rgba(224,58,63,.35); transform: scale(1.12); }
+  .tl-year { font-family:'Bebas Neue',sans-serif; font-size: 1.5rem; letter-spacing:.04em; margin-top:.7rem; color: var(--ink); line-height:1; }
+  .tl-node.active .tl-year { color: var(--coral); }
+  .tl-mini { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.04em; text-transform:uppercase; color: var(--ink-faint); margin-top:.3rem; text-align:center; max-width: 13ch; }
+  .tl-scroll-note { font-family:'Space Mono',monospace; font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color: var(--ink-faint); margin-top:.6rem; }
+
+  /* Detail panel */
+  .tl-detail {
+    margin-top: 2.4rem; border: 1px solid var(--line); border-radius: 12px; background: var(--bg);
+    padding: clamp(1.8rem, 3vw, 2.8rem); position: relative; overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0,0,0,.06); min-height: 220px;
+  }
+  .tl-detail::before { content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background: var(--coral); }
+  .tl-detail .d-era { font-family:'Space Mono',monospace; font-size:.7rem; letter-spacing:.16em; text-transform:uppercase; color: var(--coral); }
+  .tl-detail .d-year { font-family:'Bebas Neue',sans-serif; font-size: clamp(3rem,7vw,5rem); line-height:.9; color: var(--ink); margin:.1rem 0 .2rem; }
+  .tl-detail .d-title { font-size: clamp(1.6rem,3vw,2.4rem); text-transform: uppercase; color: var(--teal); margin-bottom: .8rem; }
+  .tl-detail .d-body { color: var(--ink-dim); font-size: 1.05rem; max-width: 70ch; }
+  .tl-detail .d-body p { margin-bottom: .9rem; }
+  .tl-detail .d-body p:last-child { margin-bottom: 0; }
+  .tl-detail .d-fact { display:inline-block; margin-top:1.2rem; font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.06em; color: var(--ink); background: var(--bg-2); border:1px solid var(--line); border-radius:100px; padding:.5rem .9rem; }
+  .tl-nav-btns { display:flex; gap:.7rem; margin-top: 1.6rem; }
+  .tl-btn {
+    font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;
+    padding:.7rem 1.1rem; border-radius:4px; border:1px solid var(--ink); color:var(--ink);
+    background:transparent; cursor:pointer; transition: all .2s; display:inline-flex; align-items:center; gap:.5rem;
+  }
+  .tl-btn:hover:not(:disabled) { background: var(--ink); color: var(--bg); }
+  .tl-btn:disabled { opacity:.3; cursor: not-allowed; }
+  .tl-fade { animation: tlFade .35s ease; }
+  @keyframes tlFade { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+
+  /* ---------- CLOSING CTA ---------- */
+  #start-cta { background: linear-gradient(180deg, var(--bg-2), var(--bg-3)); padding: clamp(70px,10vh,130px) 0; text-align: center; }
+  #start-cta h2 { font-size: clamp(2.4rem,6vw,4.8rem); text-transform: uppercase; }
+  #start-cta h2 .hl { color: var(--coral); }
+  #start-cta p { color: var(--ink-dim); font-size: 1.1rem; max-width: 50ch; margin: 1rem auto 2rem; }
+  .cta-row { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+  .btn {
+    font-family: 'Space Mono', monospace; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase;
+    padding: 1rem 1.8rem; border-radius: 3px; cursor: pointer; border: 1px solid transparent;
+    transition: all .25s; display: inline-flex; align-items: center; gap: .6rem;
+  }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { box-shadow: 0 6px 24px rgba(0,168,140,.35); transform: translateY(-2px); }
+  .btn-ghost { border-color: var(--ink); color: var(--ink); background: transparent; }
+  .btn-ghost:hover { background: var(--ink); color: var(--bg); transform: translateY(-2px); }
+
+  /* ---------- FOOTER ---------- */
+  footer { background: var(--bg); border-top: 1px solid var(--line); padding: 2.4rem 0; }
+  footer .wrap { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+  footer .f-note { font-family:'Space Mono',monospace; font-size:.66rem; letter-spacing:.06em; color: var(--ink-faint); max-width: 60ch; line-height:1.7; }
+
+  /* ---------- REVEAL ---------- */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 880px) {
+    .nav-links { display:none; }
+    .nav-toggle { display:block; }
+    nav.open .nav-links { display:flex; position:absolute; top:var(--nav-h); left:0; right:0; flex-direction:column; background:var(--bg-2); padding:1.4rem 6vw; gap:1.2rem; border-bottom:1px solid var(--line); }
+  }
+  @media (max-width: 760px) {
+    .brand-text { display:none; }
+    .tl-mini { display:none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; scroll-behavior: auto !important; }
+    .reveal { opacity:1 !important; transform:none !important; }
+  }
+  /* ---------- GITHUB BADGE ---------- */
+  .gh-badge {
+    position: fixed; bottom: 22px; right: 22px; z-index: 200;
+    display: inline-flex; align-items: center; gap: .55rem;
+    padding: .65rem 1.1rem .65rem .85rem;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 100px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.10);
+    color: var(--ink); font-family: 'Space Mono', monospace; font-size: .72rem;
+    letter-spacing: .08em; text-transform: uppercase; text-decoration: none;
+    transition: all .25s;
+  }
+  .gh-badge svg { width: 18px; height: 18px; flex-shrink: 0; fill: var(--ink); transition: fill .25s; }
+  .gh-badge:hover { background: var(--ink); color: var(--bg); box-shadow: 0 8px 28px rgba(0,0,0,.18); transform: translateY(-2px); }
+  .gh-badge:hover svg { fill: var(--bg); }
+  @media (max-width: 640px) {
+    .gh-badge { bottom: 16px; right: 16px; padding: .6rem; border-radius: 50%; }
+    .gh-badge .gh-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 181 52" fill="none" stroke="currentColor" stroke-width="2.2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="1" y="1" width="50" height="50"/>
+          <rect x="59" y="1" width="50" height="50"/>
+          <polyline points="59,51 84,1 109,51"/>
+          <rect x="117" y="1" width="63" height="50"/>
+          <line x1="117" y1="26" x2="180" y2="26"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="bt1">The LAB Miami</span>
+        <span class="bt2">Miami Tech District</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="#start-hero" data-sec="start-hero">Overview</a>
+      <a href="#narrative" data-sec="narrative">The Story</a>
+      <a href="#timeline" data-sec="timeline">Timeline</a>
+      <a href="#start-cta" data-sec="start-cta">What's Next</a>
+    </div>
+    <div class="nav-right">
+      <div class="page-dd" id="pageDD">
+        <button class="page-dd-trigger" id="pageDDTrigger" aria-haspopup="true" aria-expanded="false">Menu <span class="caret">▼</span></button>
+        <div class="page-dd-menu" role="menu">
+          <a class="page-dd-item" href="index.html" role="menuitem"><div class="pi-title">About</div><div class="pi-desc">Wynwood today</div></a>
+          <a class="page-dd-item current" href="wyntechsidepagev1.html" role="menuitem"><div class="pi-title">The Start</div><div class="pi-desc">How Wynwood was built</div></a>
+          <div class="page-dd-divider"></div>
+          <a class="page-dd-cta" href="index.html#contact" role="menuitem">Join the Movement</a>
+        </div>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="start-hero">
+  <div class="grid-bg"></div>
+  <div class="wrap hero-inner">
+    <div class="start-tag reveal in">
+      <span class="dot"></span>
+      <span class="label">Point A → Point B</span>
+    </div>
+    <h1 class="start-title reveal in"><span class="a">From Warehouses</span> <span class="b">To A Tech Hub</span></h1>
+    <p class="start-sub reveal in">This took about a hundred years, not a decade. <strong>Walk the timeline</strong> from the warehouses of the 1920s through the murals, The LAB, and the tech crowd that eventually followed. Tap any point to read more.</p>
+    <div class="scroll-hint reveal in">↓ Start the walk</div>
+  </div>
+</section>
+
+<!-- NARRATIVE -->
+<section id="narrative">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="label">The Story Behind The District</span>
+      <h2 style="font-size:clamp(2.4rem,6vw,5rem);text-transform:uppercase;margin:.4rem 0 0;">Wynwood Didn't Get<br /><span style="color:var(--teal)">Handed A Tech Scene.</span></h2>
+      <p style="color:var(--ink-dim);font-size:1.15rem;max-width:62ch;margin-top:1rem;line-height:1.75;">The people who built one showed up on their own, and that history still runs the place today.</p>
+    </div>
+
+    <div class="narr-grid">
+      <div class="narr-col reveal d1">
+        <div class="narr-divider"></div>
+        <h3>A Bet On <span class="hl">The Block</span></h3>
+        <p>In 2004, Goldman Properties started buying up empty warehouses in one of Miami's most forgotten industrial pockets. No tenants, no foot traffic, no reason to think it would pay off.</p>
+        <p>By 2009 those same walls were a globally-renowned outdoor museum: the Wynwood Walls, with artists from 18 countries covering 85,000 square feet of concrete. Visitors came from everywhere, and the neighborhood got a name for itself.</p>
+        <p>It didn't stop at the walls. Serious chefs followed the crowd in. KYU, Alter, Hiyakawa, and Francesco Martucci's first U.S. spot, from one of the best pizzaiolos working anywhere.</p>
+        <p>Bit by bit, Wynwood turned into a place people wanted to stick around. Artists, chefs, and the kind of people who build things.</p>
+
+        <div class="narr-quote">
+          <blockquote>"Wynwood just really has that sort of spirit that you are looking for when a new tech sector is built — like San Francisco's South of Market, like Brooklyn in New York. Ultimately you want to be with the other tech companies."</blockquote>
+          <cite>— Peter Smith, CEO &amp; Co-Founder, Blockchain.com</cite>
+        </div>
+      </div>
+
+      <div class="narr-col reveal d2">
+        <div class="narr-divider" style="background:var(--teal)"></div>
+        <h3>The Tech Scene <span class="hl-coral">Followed The Energy</span></h3>
+        <p>In 2012, The LAB Miami opened in a converted Wynwood warehouse, the first coworking space in South Florida built for tech founders specifically. Someone had decided this was exactly where Miami's startup scene ought to begin.</p>
+        <p>Then 2021 happened. Founders Fund and Atomic signed 10-year leases, three full floors, 22,000 square feet. Blockchain.com put 200 people here. Spotify and Live Nation were already around. PwC wanted 38,000 square feet. Ken Griffin and Goldman Properties paid $180 million for 545wyn, a 298,000 square foot tower. Amazon arrived in 2025.</p>
+        <p>What those companies got wasn't just office space. It was a neighborhood that had spent ten years quietly filling up with people who build things, walkable and dense and busy at street level.</p>
+
+        <div class="narr-stat-stack">
+          <div class="narr-stat">
+            <div class="ns-num">15M+</div>
+            <div class="ns-label">Visitors a year, up from 600K in 2013</div>
+          </div>
+          <div class="narr-stat">
+            <div class="ns-num">$500M</div>
+            <div class="ns-label">Spent in the district by visitors each year</div>
+          </div>
+          <div class="narr-stat">
+            <div class="ns-num">15K+</div>
+            <div class="ns-label">People walking through on a given day</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline">
+  <div class="wrap">
+    <div class="tl-head reveal">
+      <span class="label">The Walk</span>
+      <h2>One Neighborhood,<br />A Century Of Reinvention</h2>
+      <p>Each point is a turn Wynwood took. Tap a dot to see what happened and why it mattered.</p>
+    </div>
+
+    <div class="tl-scroll reveal d1">
+      <div class="tl-track">
+        <div class="tl-line"><div class="fill" id="tlFill"></div></div>
+        <div class="tl-dots" id="tlDots"><!-- JS injects nodes --></div>
+      </div>
+    </div>
+    <div class="tl-scroll-note">← Scroll the timeline sideways on smaller screens →</div>
+
+    <div class="tl-detail" id="tlDetail" aria-live="polite"><!-- JS injects detail --></div>
+
+    <div class="tl-nav-btns">
+      <button class="tl-btn" id="tlPrev">← Previous</button>
+      <button class="tl-btn" id="tlNext">Next →</button>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING CTA -->
+<section id="start-cta">
+  <div class="wrap">
+    <span class="label">Now It's Your Turn</span>
+    <h2>That's The <span class="hl">Story</span>.<br />The Next Part Is Open.</h2>
+    <p>A hundred years of people showing up to build something. The LAB is where the next stretch of it happens.</p>
+    <div class="cta-row">
+      <a href="index.html" class="btn btn-ghost">See Wynwood Today</a>
+      <a href="index.html#contact" class="btn btn-primary">Join the Movement →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 181 52" fill="none" stroke="currentColor" stroke-width="2.2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="height:22px">
+          <rect x="1" y="1" width="50" height="50"/>
+          <rect x="59" y="1" width="50" height="50"/>
+          <polyline points="59,51 84,1 109,51"/>
+          <rect x="117" y="1" width="63" height="50"/>
+          <line x1="117" y1="26" x2="180" y2="26"/>
+        </svg>
+      </div>
+    </div>
+    <p class="f-note">Sources: Wynwood Walls / Goldman Properties · Mana Wynwood history · The LAB Miami · NBC 6 Miami · Miami New Times · Refresh Miami. Dates reflect widely reported milestones in Wynwood's development.</p>
+  </div>
+</footer>
+
+<script>
+  /* ════════════════════════════════════
+     MENU GUARD (hardwired)
+     Guarantees the "Menu" dropdown always exists in the nav, even if an old
+     cached page or unexpected DOM state loads. Rebuilds it if missing and
+     removes any stale standalone "Join the Movement" button from the top bar.
+     ════════════════════════════════════ */
+  (function ensureMenu() {
+    var building = false;
+    function build() {
+      if (building) return;
+      building = true;
+      var navEl = document.getElementById('nav');
+      if (!navEl) { building = false; return; }
+      var navRight = navEl.querySelector('.nav-right');
+      if (!navRight) {
+        var wrap = navEl.querySelector('.wrap') || navEl;
+        navRight = document.createElement('div');
+        navRight.className = 'nav-right';
+        wrap.appendChild(navRight);
+      }
+      function stripStrayCTA(root) {
+        root.querySelectorAll('a, button').forEach(function(el) {
+          if (el.closest('.page-dd-menu')) return;
+          if (el.classList.contains('page-dd-trigger')) return;
+          if (el.classList.contains('nav-toggle')) return;
+          var isOldClass = el.classList.contains('nav-cta');
+          var txt = (el.textContent || '').trim().toLowerCase();
+          var isOldText = txt === 'join the movement';
+          if (isOldClass || isOldText) el.remove();
+        });
+      }
+      stripStrayCTA(navRight);
+      stripStrayCTA(navEl.querySelector('.wrap') || navEl);
+
+      if (document.getElementById('pageDD')) { building = false; return; }
+
+      var toggle = navRight.querySelector('.nav-toggle');
+      var dd = document.createElement('div');
+      dd.className = 'page-dd';
+      dd.id = 'pageDD';
+      dd.innerHTML =
+        '<button class="page-dd-trigger" id="pageDDTrigger" aria-haspopup="true" aria-expanded="false">Menu <span class="caret">\u25BC</span></button>' +
+        '<div class="page-dd-menu" role="menu">' +
+          '<a class="page-dd-item" href="index.html" role="menuitem"><div class="pi-title">About</div><div class="pi-desc">Wynwood today</div></a>' +
+          '<a class="page-dd-item current" href="wyntechsidepagev1.html" role="menuitem"><div class="pi-title">The Start</div><div class="pi-desc">How Wynwood was built</div></a>' +
+          '<div class="page-dd-divider"></div>' +
+          '<a class="page-dd-cta" href="index.html#contact" role="menuitem">Join the Movement</a>' +
+        '</div>';
+      navRight.insertBefore(dd, toggle || null);
+      building = false;
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function(){ build(); watch(); });
+    } else {
+      build(); watch();
+    }
+    function watch() {
+      var navEl = document.getElementById('nav');
+      if (!navEl || !window.MutationObserver) return;
+      var mo = new MutationObserver(function() { build(); });
+      mo.observe(navEl, { childList: true, subtree: true });
+    }
+  })();
+
+  /* ── Timeline data ── */
+  var STEPS = [
+    {
+      year: '1920s', mini: 'Warehouse roots', era: 'The Foundation',
+      title: 'A District Of Factories',
+      body: [
+        'Wynwood begins as an industrial and working-class neighborhood just north of downtown Miami, lined with warehouses and factories. Its wide, windowless buildings are built for manufacturing, not foot traffic.',
+        'Those blank walls and big open floors are what everything later gets built on. The bones of the neighborhood go in here, even if nobody knows it yet.'
+      ],
+      fact: 'Built as a warehouse district in the Roaring Twenties.'
+    },
+    {
+      year: '1980', mini: 'Garment capital', era: 'The Foundation',
+      title: 'Third-Largest Garment District In The US',
+      body: [
+        'By 1980, Wynwood is one of the largest garment manufacturing districts in the country, home to fashion innovators and a dense immigrant community, with a strong Puerto Rican presence that gives the area its early identity.',
+        'When manufacturing dries up later, the warehouses empty out and the rents drop. All that empty space ends up being the opening nobody planned for.'
+      ],
+      fact: 'At its peak, the 3rd-largest garment district in the United States.'
+    },
+    {
+      year: '2008', mini: 'First restaurant', era: 'The Spark',
+      title: 'Tony Goldman Bets On The Block',
+      body: [
+        'Real estate developer Tony Goldman, already known for reviving Miami Beach\u2019s South Beach, starts buying and renovating Wynwood\u2019s aging warehouses in the 2000s. He sees an arts district waiting to happen.',
+        'In 2008 he opens Joey\u2019s Italian Cafe, the first restaurant in the neighborhood, planting the first seed of the food-and-culture scene Wynwood is known for today.'
+      ],
+      fact: 'Joey\u2019s Italian Cafe (2008) was the neighborhood\u2019s first restaurant.'
+    },
+    {
+      year: '2009', mini: 'Wynwood Walls', era: 'The Spark',
+      title: 'Wynwood Walls Changes Everything',
+      body: [
+        'In late 2009, timed to coincide with Art Basel, Goldman launches Wynwood Walls, turning six warehouse facades into giant canvases for world-class street artists. It is conceived as an outdoor "museum of the streets."',
+        'The project ignites a mural craze that spreads across the whole neighborhood, drawing artists, galleries, and eventually millions of visitors a year. This is the moment Wynwood becomes a destination.'
+      ],
+      fact: 'Wynwood Walls opened in 2009 alongside Art Basel Miami.'
+    },
+    {
+      year: '2012', mini: 'The LAB founded', era: 'The Build',
+      title: 'The LAB Miami Opens Its Doors',
+      body: [
+        'The founding members of The LAB team up with the Knight Foundation and a group of angel investors to convert a 10,000-square-foot Wynwood warehouse into South Florida\u2019s first coworking space dedicated to tech entrepreneurs.',
+        'It quickly becomes the center of gravity for Miami tech, the one room where founders, creatives, and money start running into each other. The arts district gets a tech pulse.'
+      ],
+      fact: 'The LAB Miami opened in 2012 as the area\u2019s first tech coworking space.'
+    },
+    {
+      year: '2015', mini: 'Rezoning', era: 'The Build',
+      title: 'The Rezoning That Opened The Doors',
+      body: [
+        'The city-run Wynwood Business Improvement District leads a rezoning that allows residential, entertainment, and culinary uses, plus taller construction, up to around twelve stories.',
+        'The shift unlocks the district\u2019s full potential: housing, offices, and new development can finally coexist with the galleries and murals. It sets the stage for the company and capital influx still to come.'
+      ],
+      fact: 'The 2015 BID rezoning made live, work, and build all possible in one square mile.'
+    },
+    {
+      year: '2020', mini: '"How can I help?"', era: 'The Tech Hub',
+      title: 'The Tweet That Moved Silicon Valley',
+      body: [
+        'On December 4, 2020, Founders Fund\u2019s Delian Asparouhov tweets, "what if we move Silicon Valley to Miami?" Mayor Francis Suarez replies, "How can I help?" The exchange goes viral and kicks off a tech migration.',
+        'Founders Fund and the venture studio Atomic plant roots, and a wave of founders and investors follows, a lot of them landing in Wynwood warehouses that are now offices. The creative crowd it spent a decade attracting is exactly what the tech crowd wants to be near.'
+      ],
+      fact: 'A single December 2020 tweet sparked the Miami tech migration.'
+    },
+    {
+      year: '2024', mini: 'Wynwood Plaza', era: 'The Tech Hub',
+      title: 'Big Capital Plants A Flag',
+      body: [
+        'Development reaches a new scale with Wynwood Plaza, a roughly $450 million, one-million-square-foot project that becomes the largest development in the Wynwood Arts District, mixing office, residential, and retail.',
+        'Amazon signs the largest lease in the district\u2019s history inside it, a signal that Wynwood now competes for major corporate tenants, not just startups and galleries.'
+      ],
+      fact: 'Wynwood Plaza (~$450M) is the district\u2019s largest development, anchored by Amazon.'
+    },
+    {
+      year: 'Today', mini: 'Miami\u2019s tech hub', era: 'The Tech Hub',
+      title: 'The Real HQ Of South Florida Tech',
+      body: [
+        'A century after its first warehouses went up, Wynwood is home to 100+ funded startups, billions in investment, and one of the densest tech clusters in Miami, all in one walkable square mile, still anchored by The LAB.',
+        'The murals are still up. The builders are still here. This isn\u2019t the finish line, it\u2019s just where the next thing starts.'
+      ],
+      fact: 'Today: 100+ funded startups, $2B+ invested, anchored by The LAB Miami.'
+    }
+  ];
+
+  var idx = 0;
+  var dotsEl = document.getElementById('tlDots');
+  var detailEl = document.getElementById('tlDetail');
+  var fillEl = document.getElementById('tlFill');
+  var prevBtn = document.getElementById('tlPrev');
+  var nextBtn = document.getElementById('tlNext');
+
+  /* Build nodes */
+  STEPS.forEach(function(s, i) {
+    var node = document.createElement('div');
+    node.className = 'tl-node';
+    node.setAttribute('role', 'button');
+    node.setAttribute('tabindex', '0');
+    node.setAttribute('aria-label', s.year + ': ' + s.title);
+    node.innerHTML =
+      '<div class="tl-dot">' + (i + 1) + '</div>' +
+      '<div class="tl-year">' + s.year + '</div>' +
+      '<div class="tl-mini">' + s.mini + '</div>';
+    node.addEventListener('click', function() { select(i); });
+    node.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(i); }
+    });
+    dotsEl.appendChild(node);
+  });
+
+  var nodeEls = Array.prototype.slice.call(dotsEl.children);
+
+  function render() {
+    var s = STEPS[idx];
+    detailEl.innerHTML =
+      '<div class="d-era">' + s.era + '</div>' +
+      '<div class="d-year">' + s.year + '</div>' +
+      '<div class="d-title">' + s.title + '</div>' +
+      '<div class="d-body">' + s.body.map(function(p){ return '<p>' + p + '</p>'; }).join('') + '</div>' +
+      '<div class="d-fact">★ ' + s.fact + '</div>';
+    detailEl.classList.remove('tl-fade'); void detailEl.offsetWidth; detailEl.classList.add('tl-fade');
+
+    nodeEls.forEach(function(n, i) { n.classList.toggle('active', i === idx); });
+    fillEl.style.width = (STEPS.length <= 1 ? 0 : (idx / (STEPS.length - 1)) * 100) + '%';
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === STEPS.length - 1);
+  }
+
+  function select(i) {
+    idx = Math.max(0, Math.min(STEPS.length - 1, i));
+    render();
+    var active = nodeEls[idx];
+    if (active && active.scrollIntoView) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+
+  prevBtn.addEventListener('click', function(){ select(idx - 1); });
+  nextBtn.addEventListener('click', function(){ select(idx + 1); });
+  document.addEventListener('keydown', function(e) {
+    if (e.target.closest('input, textarea')) return;
+    if (e.key === 'ArrowRight') select(idx + 1);
+    else if (e.key === 'ArrowLeft') select(idx - 1);
+  });
+
+  render();
+
+  /* ── Page dropdown (delegated so it works even if the menu is rebuilt) ── */
+  document.addEventListener('click', function(e) {
+    var trig = e.target.closest && e.target.closest('#pageDDTrigger');
+    var dd = document.getElementById('pageDD');
+    if (trig && dd) {
+      e.stopPropagation();
+      var open = dd.classList.toggle('open');
+      trig.setAttribute('aria-expanded', String(open));
+      return;
+    }
+    if (dd && dd.classList.contains('open') && !e.target.closest('#pageDD')) {
+      dd.classList.remove('open');
+      var t = document.getElementById('pageDDTrigger');
+      if (t) t.setAttribute('aria-expanded', 'false');
+    }
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var dd = document.getElementById('pageDD');
+      if (dd) { dd.classList.remove('open'); var t = document.getElementById('pageDDTrigger'); if (t) t.setAttribute('aria-expanded', 'false'); }
+    }
+  });
+
+  /* ── Nav scroll state ── */
+  var nav = document.getElementById('nav');
+  window.addEventListener('scroll', function(){ nav.classList.toggle('scrolled', window.scrollY > 30); }, { passive: true });
+
+  /* ── Mobile hamburger toggle ── */
+  var menuBtn = document.querySelector('.nav-toggle');
+  if (menuBtn) {
+    menuBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var open = nav.classList.toggle('open');
+      menuBtn.textContent = open ? '✕' : '☰';
+      menuBtn.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', function(e) {
+      if (nav.classList.contains('open') && !nav.contains(e.target)) {
+        nav.classList.remove('open');
+        menuBtn.textContent = '☰';
+      }
+    });
+  }
+
+  /* ── Smooth scroll for section links + close mobile menu ── */
+  document.querySelectorAll('.nav-links a[href^="#"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      var id = a.getAttribute('href').slice(1);
+      var target = document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      if (nav.classList.contains('open')) {
+        nav.classList.remove('open');
+        if (menuBtn) menuBtn.textContent = '☰';
+      }
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  /* ── Scroll-spy for section links ── */
+  var spySections = ['start-hero','narrative','timeline','start-cta'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-links a[data-sec]'));
+  var currentActive = null;
+  function updateSpy() {
+    var mid = window.scrollY + window.innerHeight * 0.4;
+    var best = null;
+    spySections.forEach(function(sec){ if (sec.offsetTop - 80 <= mid) best = sec.id; });
+    if (best !== currentActive) {
+      currentActive = best;
+      navLinks.forEach(function(l){ l.classList.toggle('active', l.dataset.sec === best); });
+    }
+  }
+  window.addEventListener('scroll', updateSpy, { passive: true });
+  updateSpy();
+
+  /* ── Scroll reveal ── */
+  var revealObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('in'); revealObs.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal:not(.in)').forEach(function(el){ revealObs.observe(el); });
+</script>
+<a class="gh-badge" href="https://github.com/winstonhos/Miami-Tech-District/tree/main" target="_blank" rel="noopener noreferrer" aria-label="View this project on GitHub" title="View this project on GitHub">
+  <svg viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+  <span class="gh-label">View on GitHub</span>
+</a>
+</body>
+</html>
