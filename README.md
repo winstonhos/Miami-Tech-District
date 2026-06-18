@@ -4,7 +4,7 @@ WynTech is a free, open map and microsite for Wynwood, Miami's tech district. It
 
 It's built and maintained by [The LAB Miami](https://thelabmiami.com), the coworking space that has anchored Wynwood's tech community since 2012.
 
-**Live site:** https://winstonhos.github.io/  *(update this link to match your repo's GitHub Pages URL)*
+**Live site:** https://winstonhos.github.io/Miami-Tech-District/
 
 ---
 
